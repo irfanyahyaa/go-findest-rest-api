@@ -2,28 +2,42 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-findest-rest-api/controllers/transactioncontroller"
+	"github.com/joho/godotenv"
+	"go-findest-rest-api/controller/transaction_controller"
 	"go-findest-rest-api/database"
-	"go-findest-rest-api/models"
+	"go-findest-rest-api/model"
 	"go-findest-rest-api/repository"
-	"go-findest-rest-api/seeders"
+	"go-findest-rest-api/seeder"
+	"log"
+	"os"
 )
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file:", err)
+	}
+
 	r := gin.Default()
 
-	// Initialize database connection
-	database.InitDb()
+	// initialize database connection
+	database.InitDb(
+		os.Getenv("HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
+	)
 	db := database.Database
 
 	// seed user into database
-	seeders.SeedUsers(database.Database)
+	seeder.SeedUsers(database.Database)
 
-	// Create repositories
-	transactionRepo := repository.NewDatabaseRepository[models.Transaction](db)
-	userRepo := repository.NewDatabaseRepository[models.User](db)
+	// create repositories
+	transactionRepo := repository.NewDatabaseRepository[model.Transaction](db)
+	userRepo := repository.NewDatabaseRepository[model.User](db)
 
-	// Inject repositories into the controller
+	// inject repositories into the controller
 	transactionController := transactioncontroller.NewTransactionController(transactionRepo, userRepo)
 
 	// routes

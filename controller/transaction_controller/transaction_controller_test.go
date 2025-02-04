@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
 	"github.com/stretchr/testify/mock"
-	"go-findest-rest-api/controllers/transactioncontroller"
-	"go-findest-rest-api/mocks"
-	"go-findest-rest-api/models"
+	"go-findest-rest-api/controller/transaction_controller"
+	"go-findest-rest-api/mock"
+	"go-findest-rest-api/model"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
@@ -31,13 +31,13 @@ func TestCreateTransaction(t *testing.T) {
 		expectedStatus int
 	}{
 		"successfully created transaction": {
-			mockBody: &models.Transaction{
+			mockBody: &model.Transaction{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
 			},
-			mockFirstErr: []any{&models.User{ID: 1}, nil},
-			mockCreateErr: []any{&models.Transaction{
+			mockFirstErr: []any{&model.User{ID: 1}, nil},
+			mockCreateErr: []any{&model.Transaction{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
@@ -49,39 +49,39 @@ func TestCreateTransaction(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error user not found": {
-			mockBody: &models.Transaction{
+			mockBody: &model.Transaction{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
 			},
-			mockFirstErr:   []any{(*models.User)(nil), gorm.ErrRecordNotFound},
+			mockFirstErr:   []any{(*model.User)(nil), gorm.ErrRecordNotFound},
 			expectedStatus: http.StatusNotFound,
 		},
 		"error user internal server error": {
-			mockBody: &models.Transaction{
+			mockBody: &model.Transaction{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
 			},
-			mockFirstErr:   []any{(*models.User)(nil), errors.New("")},
+			mockFirstErr:   []any{(*model.User)(nil), errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error cannot insert transaction into database": {
-			mockBody: &models.Transaction{
+			mockBody: &model.Transaction{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
 			},
-			mockFirstErr:   []any{&models.User{ID: 1}, nil},
-			mockCreateErr:  []any{(*models.Transaction)(nil), errors.New("")},
+			mockFirstErr:   []any{&model.User{ID: 1}, nil},
+			mockCreateErr:  []any{(*model.Transaction)(nil), errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
 		},
 	}
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
-			mockTransactionRepo := new(mocks.MockDatabaseRepository[models.Transaction])
-			mockUserRepo := new(mocks.MockDatabaseRepository[models.User])
+			mockTransactionRepo := new(mock.MockDatabaseRepository[model.Transaction])
+			mockUserRepo := new(mock.MockDatabaseRepository[model.User])
 
 			controller := transactioncontroller.NewTransactionController(
 				mockTransactionRepo,

@@ -1,22 +1,23 @@
 package database
 
 import (
-	"go-findest-rest-api/models"
+	"fmt"
+	"go-findest-rest-api/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var Database *gorm.DB
 
-func InitDb() {
-	dsn := "host=localhost user=postgres password=123 dbname=go_findest_rest_api_db port=5432 sslmode=disable"
+func InitDb(host string, dbUser string, dbPassword string, dbName string, dbPort string) {
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, dbUser, dbPassword, dbName, dbPort)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
 
-	db.AutoMigrate(&models.Transaction{})
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&model.Transaction{})
+	db.AutoMigrate(&model.User{})
 
 	Database = db
 }

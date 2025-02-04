@@ -3,21 +3,21 @@ package transactioncontroller
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-findest-rest-api/dtos"
-	"go-findest-rest-api/models"
+	"go-findest-rest-api/dto"
+	"go-findest-rest-api/model"
 	"go-findest-rest-api/repository"
-	"go-findest-rest-api/utils"
+	"go-findest-rest-api/util"
 	"gorm.io/gorm"
 )
 
 type TransactionController struct {
-	TransactionRepo repository.DatabaseRepository[models.Transaction]
-	UserRepo        repository.DatabaseRepository[models.User]
+	TransactionRepo repository.DatabaseRepository[model.Transaction]
+	UserRepo        repository.DatabaseRepository[model.User]
 }
 
 func NewTransactionController(
-	transactionRepo repository.DatabaseRepository[models.Transaction],
-	userRepo repository.DatabaseRepository[models.User],
+	transactionRepo repository.DatabaseRepository[model.Transaction],
+	userRepo repository.DatabaseRepository[model.User],
 ) *TransactionController {
 	return &TransactionController{
 		TransactionRepo: transactionRepo,
@@ -27,9 +27,9 @@ func NewTransactionController(
 
 func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	// bind payload into json
-	var payload dtos.TransactionDTO
+	var payload dto.TransactionDTO
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		utils.InternalServerError(c, err.Error(), nil)
+		util.InternalServerError(c, err.Error(), nil)
 		return
 	}
 
@@ -37,29 +37,29 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	_, firstErr := tc.UserRepo.First(payload.UserID)
 	if firstErr != nil {
 		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
-			utils.NotFound(c, "User not found", nil)
+			util.NotFound(c, "User not found", nil)
 			return
 		}
 
-		utils.InternalServerError(c, firstErr.Error(), nil)
+		util.InternalServerError(c, firstErr.Error(), nil)
 		return
 	}
 
 	// insert transaction into database
 	transaction, createErr := tc.TransactionRepo.Create(
-		&models.Transaction{
+		&model.Transaction{
 			UserID: payload.UserID,
 			Amount: payload.Amount,
 			Status: payload.Status,
 		},
 	)
 	if createErr != nil {
-		utils.InternalServerError(c, createErr.Error(), nil)
+		util.InternalServerError(c, createErr.Error(), nil)
 		return
 	}
 
 	// build response
-	res := dtos.TransactionResponse{
+	res := dto.TransactionResponse{
 		ID:        transaction.ID,
 		UserID:    transaction.UserID,
 		Amount:    transaction.Amount,
@@ -68,5 +68,5 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	}
 
 	// return response
-	utils.Created(c, "transaction created successfully", res)
+	util.Created(c, "transaction created successfully", res)
 }
