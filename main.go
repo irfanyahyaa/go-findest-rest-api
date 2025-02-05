@@ -43,6 +43,7 @@ func main() {
 	// routes
 	r.POST("/api/transaction", transactionController.CreateTransaction)
 	r.GET("/api/transactions", transactionController.GetTransactions)
+	r.GET("/api/transaction/:id", transactionController.GetTransactionById)
 
 	r.Run()
 }

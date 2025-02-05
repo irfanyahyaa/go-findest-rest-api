@@ -137,3 +137,32 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	// return response
 	util.Success(c, "transaction(s) fetched successfully", res)
 }
+
+func (tc *TransactionController) GetTransactionById(c *gin.Context) {
+	// get param from context
+	id := c.Param("id")
+
+	// check if transaction exist
+	transaction, firstErr := tc.TransactionRepo.First(id)
+	if firstErr != nil {
+		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
+			util.NotFound(c, "User not found", nil)
+			return
+		}
+
+		util.InternalServerError(c, firstErr.Error(), nil)
+		return
+	}
+
+	// build response
+	res := dto.TransactionResponse{
+		ID:        transaction.ID,
+		UserID:    transaction.UserID,
+		Amount:    transaction.Amount,
+		Status:    transaction.Status,
+		CreatedAt: transaction.CreatedAt,
+	}
+
+	// return response
+	util.Success(c, "transaction fetched successfully", res)
+}
