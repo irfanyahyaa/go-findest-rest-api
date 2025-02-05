@@ -115,7 +115,8 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	// find all transactions
 	transactions, findErr := tc.TransactionRepo.Find(filter)
 	if findErr != nil {
-		util.NotFound(c, "transaction not found", []dto.TransactionResponse{})
+		util.NotFound(c, "transactions not found", []dto.TransactionResponse{})
+		return
 	}
 
 	// build response
@@ -147,7 +148,7 @@ func (tc *TransactionController) GetTransactionById(c *gin.Context) {
 	transaction, firstErr := tc.TransactionRepo.First(id)
 	if firstErr != nil {
 		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
-			util.NotFound(c, "transaction not found", nil)
+			util.NotFound(c, "transaction not found or already deleted", nil)
 			return
 		}
 
@@ -183,7 +184,7 @@ func (tc *TransactionController) UpdateTransaction(c *gin.Context) {
 	transaction, firstErr := tc.TransactionRepo.First(id)
 	if firstErr != nil {
 		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
-			util.NotFound(c, "transaction not found", nil)
+			util.NotFound(c, "transaction not found or already deleted", nil)
 			return
 		}
 
@@ -191,7 +192,7 @@ func (tc *TransactionController) UpdateTransaction(c *gin.Context) {
 		return
 	}
 
-	// update transaction and save it into database
+	// update transaction and save it to database
 	updatedTransaction, saveErr := tc.TransactionRepo.Save(
 		&model.Transaction{
 			ID:        transaction.ID,
@@ -238,6 +239,7 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 		return
 	}
 
+	// delete transaction and save it to database
 	_, saveErr := tc.TransactionRepo.Save(
 		&model.Transaction{
 			ID:        transaction.ID,

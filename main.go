@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"go-findest-rest-api/controller/dashboard_controller"
 	"go-findest-rest-api/controller/transaction_controller"
 	"go-findest-rest-api/database"
 	"go-findest-rest-api/model"
@@ -40,6 +41,7 @@ func main() {
 
 	// inject repositories into the controller
 	transactionController := transactioncontroller.NewTransactionController(transactionRepo, userRepo)
+	dashboardController := dashboardcontroller.NewDashboardController(transactionRepo, userRepo)
 
 	// routes
 	r.POST("/api/transaction", transactionController.CreateTransaction)
@@ -47,6 +49,8 @@ func main() {
 	r.GET("/api/transaction/:id", transactionController.GetTransactionById)
 	r.PUT("/api/transaction/:id", transactionController.UpdateTransaction)
 	r.DELETE("/api/transaction/:id", transactionController.DeleteTransaction)
+
+	r.GET("/api/dashboard/summary", dashboardController.GetDashboardSummary)
 
 	r.Run()
 }

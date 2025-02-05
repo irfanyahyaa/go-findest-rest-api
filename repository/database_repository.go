@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"go-findest-rest-api/dto"
 	"gorm.io/gorm"
 )
 
@@ -10,6 +11,7 @@ type DatabaseRepository[T any] interface {
 	Create(value *T) (*T, error)
 	Find(filter string) ([]T, error)
 	Save(value interface{}, conds ...interface{}) (*T, error)
+	AverageTransaction() ([]dto.AverageTransactionAttr, error)
 }
 
 type DatabaseRepositoryImpl[T any] struct {
@@ -69,4 +71,15 @@ func (r *DatabaseRepositoryImpl[T]) Save(value interface{}, conds ...interface{}
 	}
 
 	return &entity, nil
+}
+
+func (r *DatabaseRepositoryImpl[T]) AverageTransaction() ([]dto.AverageTransactionAttr, error) {
+	var entity []dto.AverageTransactionAttr
+	query := "SELECT user_id, AVG(amount) AS avg_transaction FROM transactions WHERE is_deleted = false GROUP BY transactions.user_id"
+
+	if err := r.db.Raw(query).Scan(&entity).Error; err != nil {
+		return nil, err
+	}
+
+	return entity, nil
 }

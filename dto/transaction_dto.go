@@ -13,11 +13,6 @@ type GetTransactionsQuery struct {
 	Status string `form:"status"`
 }
 
-type Pagination[T any] struct {
-	TotalRecords int `json:"totalRecords"`
-	Data         []T `json:"data"`
-}
-
 type TransactionResponse struct {
 	ID        uint      `json:"id"`
 	UserID    uint      `json:"userId"`
