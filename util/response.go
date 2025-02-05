@@ -15,6 +15,10 @@ func SendResponse(c *gin.Context, statusCode int, data interface{}, message stri
 	c.JSON(statusCode, response)
 }
 
+func Success(c *gin.Context, message string, data interface{}) {
+	SendResponse(c, http.StatusOK, data, message)
+}
+
 func Created(c *gin.Context, message string, data interface{}) {
 	SendResponse(c, http.StatusCreated, data, message)
 }

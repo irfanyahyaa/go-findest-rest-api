@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 )
 
 type DatabaseRepository[T any] interface {
 	First(conds ...interface{}) (*T, error)
 	Create(value *T) (*T, error)
+	Find(filter string) ([]T, error)
 }
 
 type DatabaseRepositoryImpl[T any] struct {
@@ -34,4 +36,19 @@ func (r *DatabaseRepositoryImpl[T]) Create(value *T) (*T, error) {
 	}
 
 	return value, nil
+}
+
+func (r *DatabaseRepositoryImpl[T]) Find(filter string) ([]T, error) {
+	var entity []T
+	query := "SELECT * FROM transactions"
+
+	if filter != "" {
+		query = fmt.Sprintf("%s %s", query, filter)
+	}
+
+	if err := r.db.Raw(query).Scan(&entity).Error; err != nil {
+		return nil, err
+	}
+
+	return entity, nil
 }

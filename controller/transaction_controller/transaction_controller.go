@@ -2,12 +2,15 @@ package transactioncontroller
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-findest-rest-api/dto"
 	"go-findest-rest-api/model"
 	"go-findest-rest-api/repository"
 	"go-findest-rest-api/util"
 	"gorm.io/gorm"
+	"strconv"
+	"strings"
 )
 
 type TransactionController struct {
@@ -69,4 +72,68 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
 	// return response
 	util.Created(c, "transaction created successfully", res)
+}
+
+func (tc *TransactionController) GetTransactions(c *gin.Context) {
+	// bind payload into json
+	var payload dto.GetTransactionsQuery
+	if err := c.ShouldBindQuery(&payload); err != nil {
+		util.InternalServerError(c, err.Error(), nil)
+		return
+	}
+
+	// map payload into filters
+	var filters = map[string]interface{}{}
+	if payload.UserID != 0 {
+		filters["user_id"] = payload.UserID
+	}
+	if payload.Status != "" {
+		filters["status"] = payload.Status
+	}
+
+	// build filter string
+	var conditions []string
+	for k, v := range filters {
+		var valueStr string
+		switch v := v.(type) {
+		case string:
+			valueStr = fmt.Sprintf("'%s'", v)
+		case uint:
+			valueStr = strconv.FormatUint(uint64(v), 10)
+		}
+
+		conditions = append(conditions, fmt.Sprintf("%s = %s", k, valueStr))
+	}
+
+	// join conditions with " OR "
+	var filter string
+	if conditions != nil && len(conditions) > 0 {
+		filter = "WHERE " + strings.Join(conditions, " OR ")
+	}
+
+	// find all transactions
+	transactions, findErr := tc.TransactionRepo.Find(filter)
+	if findErr != nil {
+		util.NotFound(c, "Transaction not found", []dto.TransactionResponse{})
+	}
+
+	// build response
+	res := dto.Pagination[dto.TransactionResponse]{
+		TotalRecords: len(transactions),
+		Data:         []dto.TransactionResponse{},
+	}
+	if len(transactions) > 0 {
+		for _, transaction := range transactions {
+			res.Data = append(res.Data, dto.TransactionResponse{
+				ID:        transaction.ID,
+				UserID:    transaction.UserID,
+				Amount:    transaction.Amount,
+				Status:    transaction.Status,
+				CreatedAt: transaction.CreatedAt,
+			})
+		}
+	}
+
+	// return response
+	util.Success(c, "transaction(s) fetched successfully", res)
 }

@@ -8,6 +8,16 @@ type TransactionDTO struct {
 	Status string  `json:"status"`
 }
 
+type GetTransactionsQuery struct {
+	UserID uint   `form:"userId"`
+	Status string `form:"status"`
+}
+
+type Pagination[T any] struct {
+	TotalRecords int `json:"totalRecords"`
+	Data         []T `json:"data"`
+}
+
 type TransactionResponse struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	UserID    uint      `json:"userId"`
