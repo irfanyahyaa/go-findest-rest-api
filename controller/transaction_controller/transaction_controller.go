@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type TransactionController struct {
@@ -30,7 +31,7 @@ func NewTransactionController(
 
 func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	// bind payload into json
-	var payload dto.TransactionDTO
+	var payload dto.TransactionCreate
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		util.InternalServerError(c, err.Error(), nil)
 		return
@@ -165,4 +166,58 @@ func (tc *TransactionController) GetTransactionById(c *gin.Context) {
 
 	// return response
 	util.Success(c, "transaction fetched successfully", res)
+}
+
+func (tc *TransactionController) UpdateTransaction(c *gin.Context) {
+	// get param from context
+	id := c.Param("id")
+
+	// bind payload into json
+	var payload dto.TransactionUpdate
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		util.InternalServerError(c, err.Error(), nil)
+		return
+	}
+
+	// check if transaction exist
+	transaction, firstErr := tc.TransactionRepo.First(id)
+	if firstErr != nil {
+		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
+			util.NotFound(c, "transaction not found", nil)
+			return
+		}
+
+		util.InternalServerError(c, firstErr.Error(), nil)
+		return
+	}
+
+	// update transaction and save it into database
+	updatedTransaction, saveErr := tc.TransactionRepo.Save(
+		&model.Transaction{
+			ID:        transaction.ID,
+			UserID:    transaction.UserID,
+			Amount:    transaction.Amount,
+			Status:    payload.Status,
+			CreatedAt: transaction.CreatedAt,
+			UpdatedAt: time.Now(),
+		},
+		id,
+	)
+	if saveErr != nil {
+		util.InternalServerError(c, saveErr.Error(), nil)
+		return
+	}
+
+	// build response
+	res := dto.TransactionResponse{
+		ID:        transaction.ID,
+		UserID:    transaction.UserID,
+		Amount:    transaction.Amount,
+		Status:    updatedTransaction.Status,
+		CreatedAt: transaction.CreatedAt,
+		UpdatedAt: updatedTransaction.UpdatedAt,
+	}
+
+	// return response
+	util.Success(c, "transaction status updated successfully", res)
 }

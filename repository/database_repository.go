@@ -9,6 +9,7 @@ type DatabaseRepository[T any] interface {
 	First(conds ...interface{}) (*T, error)
 	Create(value *T) (*T, error)
 	Find(filter string) ([]T, error)
+	Save(value interface{}, conds ...interface{}) (*T, error)
 }
 
 type DatabaseRepositoryImpl[T any] struct {
@@ -50,5 +51,20 @@ func (r *DatabaseRepositoryImpl[T]) Find(filter string) ([]T, error) {
 		return nil, err
 	}
 
+	r.db.Save(entity)
+
 	return entity, nil
+}
+
+func (r *DatabaseRepositoryImpl[T]) Save(value interface{}, conds ...interface{}) (*T, error) {
+	var entity T
+	if err := r.db.Save(value).Error; err != nil {
+		return nil, err
+	}
+
+	if err := r.db.First(&entity, conds...).Error; err != nil {
+		return nil, err
+	}
+
+	return &entity, nil
 }

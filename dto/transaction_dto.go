@@ -2,7 +2,7 @@ package dto
 
 import "time"
 
-type TransactionDTO struct {
+type TransactionCreate struct {
 	UserID uint    `json:"userId"`
 	Amount float64 `json:"amount"`
 	Status string  `json:"status"`
@@ -24,4 +24,9 @@ type TransactionResponse struct {
 	Amount    float64   `json:"amount"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type TransactionUpdate struct {
+	Status string `json:"status"`
 }

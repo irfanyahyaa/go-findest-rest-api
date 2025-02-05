@@ -8,5 +8,6 @@ type Transaction struct {
 	Amount    float64   `json:"amount"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 	User      User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

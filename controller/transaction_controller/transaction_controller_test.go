@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/stretchr/testify/mock"
 	"go-findest-rest-api/controller/transaction_controller"
+	"go-findest-rest-api/dto"
 	mocks "go-findest-rest-api/mock"
 	"go-findest-rest-api/model"
 	"gorm.io/gorm"
@@ -32,7 +33,7 @@ func TestCreateTransaction(t *testing.T) {
 		expectedStatus int
 	}{
 		"successfully created transaction": {
-			mockBody: &model.Transaction{
+			mockBody: &dto.TransactionCreate{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
@@ -50,7 +51,7 @@ func TestCreateTransaction(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error user not found": {
-			mockBody: &model.Transaction{
+			mockBody: &dto.TransactionCreate{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
@@ -59,7 +60,7 @@ func TestCreateTransaction(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		"error user internal server error": {
-			mockBody: &model.Transaction{
+			mockBody: &dto.TransactionCreate{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
@@ -68,7 +69,7 @@ func TestCreateTransaction(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error cannot insert transaction into database": {
-			mockBody: &model.Transaction{
+			mockBody: &dto.TransactionCreate{
 				UserID: 1,
 				Amount: 1,
 				Status: "pending",
