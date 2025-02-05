@@ -53,15 +53,15 @@ func (dc *DashboardController) GetDashboardSummary(c *gin.Context) {
 }
 
 func buildTransactionPagination(transactions []model.Transaction) dto.DashboardPagination[dto.TransactionResponse] {
-	var mapped []dto.TransactionResponse
-	for i, t := range transactions {
-		mapped[i] = dto.TransactionResponse{
+	mapped := make([]dto.TransactionResponse, 0, len(transactions))
+	for _, t := range transactions {
+		mapped = append(mapped, dto.TransactionResponse{
 			ID:        t.ID,
 			UserID:    t.UserID,
 			Amount:    t.Amount,
 			Status:    t.Status,
 			CreatedAt: t.CreatedAt,
-		}
+		})
 	}
 
 	return dto.DashboardPagination[dto.TransactionResponse]{
