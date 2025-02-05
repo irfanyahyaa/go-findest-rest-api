@@ -50,6 +50,14 @@ func TestCreateTransaction(t *testing.T) {
 			mockBody:       "wrong-format",
 			expectedStatus: http.StatusInternalServerError,
 		},
+		"error status must be success, pending, or failed": {
+			mockBody: &dto.TransactionCreate{
+				UserID: 1,
+				Amount: 1,
+				Status: "qwer",
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
 		"error user not found": {
 			mockBody: &dto.TransactionCreate{
 				UserID: 1,
@@ -94,12 +102,12 @@ func TestCreateTransaction(t *testing.T) {
 			mockTransactionRepo.On("Create", mock.Anything).Return(test.mockCreateErr...).Once()
 
 			router := setUpRouter()
-			router.POST("/api/transaction", controller.CreateTransaction)
+			router.POST("/api/transactions", controller.CreateTransaction)
 
 			w := httptest.NewRecorder()
 
 			body, _ := json.Marshal(test.mockBody)
-			req, _ := http.NewRequest(http.MethodPost, "/api/transaction", bytes.NewBuffer(body))
+			req, _ := http.NewRequest(http.MethodPost, "/api/transactions", bytes.NewBuffer(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			router.ServeHTTP(w, req)
@@ -190,17 +198,17 @@ func TestGetTransactionById(t *testing.T) {
 		expectedStatus int
 	}{
 		"successfully get transaction by id": {
-			testURL:        "/api/transaction/1",
+			testURL:        "/api/transactions/1",
 			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
 			expectedStatus: http.StatusOK,
 		},
 		"error transaction not found": {
-			testURL:        "/api/transaction/10",
+			testURL:        "/api/transactions/10",
 			mockFirstErr:   []any{nil, gorm.ErrRecordNotFound},
 			expectedStatus: http.StatusNotFound,
 		},
 		"error internal server error": {
-			testURL:        "/api/transaction/wrong-format",
+			testURL:        "/api/transactions/wrong-format",
 			mockFirstErr:   []any{nil, errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -219,7 +227,7 @@ func TestGetTransactionById(t *testing.T) {
 			mockTransactionRepo.On("First", mock.Anything, mock.Anything).Return(test.mockFirstErr...).Once()
 
 			router := setUpRouter()
-			router.GET("/api/transaction/:id", controller.GetTransactionById)
+			router.GET("/api/transactions/:id", controller.GetTransactionById)
 
 			w := httptest.NewRecorder()
 
@@ -242,7 +250,7 @@ func TestUpdateTransaction(t *testing.T) {
 		expectedStatus int
 	}{
 		"successfully updated transaction status": {
-			testURL: "/api/transaction/1",
+			testURL: "/api/transactions/1",
 			mockBody: &dto.TransactionUpdate{
 				Status: "success",
 			},
@@ -253,26 +261,37 @@ func TestUpdateTransaction(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		"error cannot bind payload into json": {
-			testURL:        "/api/transaction/1",
+			testURL:        "/api/transactions/1",
 			mockBody:       "wrong-format",
 			expectedStatus: http.StatusInternalServerError,
 		},
+		"error status must be success, pending, or failed": {
+			testURL: "/api/transactions/1",
+			mockBody: &dto.TransactionUpdate{
+				Status: "qwer",
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
 		"error transaction not found": {
-			testURL:        "/api/transaction/1",
-			mockBody:       &dto.TransactionUpdate{},
+			testURL: "/api/transactions/1",
+			mockBody: &dto.TransactionUpdate{
+				Status: "success",
+			},
 			mockFirstErr:   []any{(*model.Transaction)(nil), gorm.ErrRecordNotFound},
 			expectedStatus: http.StatusNotFound,
 		},
 		"error transaction internal server error": {
-			testURL:        "/api/transaction/1",
-			mockBody:       &dto.TransactionUpdate{},
+			testURL: "/api/transactions/1",
+			mockBody: &dto.TransactionUpdate{
+				Status: "success",
+			},
 			mockFirstErr:   []any{(*model.Transaction)(nil), errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error cannot updated transaction status into database": {
-			testURL: "/api/transaction/1",
+			testURL: "/api/transactions/1",
 			mockBody: &dto.TransactionUpdate{
-				Status: "pending",
+				Status: "success",
 			},
 			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
 			mockSaveErr:    []any{(*model.Transaction)(nil), errors.New("")},
@@ -294,7 +313,7 @@ func TestUpdateTransaction(t *testing.T) {
 			mockTransactionRepo.On("Save", mock.Anything, mock.Anything).Return(test.mockSaveErr...)
 
 			router := setUpRouter()
-			router.PUT("/api/transaction/:id", controller.UpdateTransaction)
+			router.PUT("/api/transactions/:id", controller.UpdateTransaction)
 
 			w := httptest.NewRecorder()
 
@@ -317,7 +336,7 @@ func TestDeleteTransaction(t *testing.T) {
 		expectedStatus int
 	}{
 		"successfully deleted transaction": {
-			testURL:      "/api/transaction/1",
+			testURL:      "/api/transactions/1",
 			mockFirstErr: []any{&model.Transaction{ID: 1}, nil},
 			mockSaveErr: []any{&model.Transaction{
 				IsDeleted: true,
@@ -325,17 +344,17 @@ func TestDeleteTransaction(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		"error transaction not found": {
-			testURL:        "/api/transaction/1",
+			testURL:        "/api/transactions/1",
 			mockFirstErr:   []any{(*model.Transaction)(nil), gorm.ErrRecordNotFound},
 			expectedStatus: http.StatusNotFound,
 		},
 		"error transaction internal server error": {
-			testURL:        "/api/transaction/1",
+			testURL:        "/api/transactions/1",
 			mockFirstErr:   []any{(*model.Transaction)(nil), errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		"error cannot updated transaction status into database": {
-			testURL:        "/api/transaction/1",
+			testURL:        "/api/transactions/1",
 			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
 			mockSaveErr:    []any{(*model.Transaction)(nil), errors.New("")},
 			expectedStatus: http.StatusInternalServerError,
@@ -356,7 +375,7 @@ func TestDeleteTransaction(t *testing.T) {
 			mockTransactionRepo.On("Save", mock.Anything, mock.Anything).Return(test.mockSaveErr...)
 
 			router := setUpRouter()
-			router.DELETE("/api/transaction/:id", controller.DeleteTransaction)
+			router.DELETE("/api/transactions/:id", controller.DeleteTransaction)
 
 			w := httptest.NewRecorder()
 

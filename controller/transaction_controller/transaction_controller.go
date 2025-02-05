@@ -37,6 +37,12 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// validate status
+	if !isValidStatus(payload.Status) {
+		util.InternalServerError(c, "status must be success, pending, or failed", nil)
+		return
+	}
+
 	// check if user exist
 	_, firstErr := tc.UserRepo.First(payload.UserID)
 	if firstErr != nil {
@@ -180,6 +186,12 @@ func (tc *TransactionController) UpdateTransaction(c *gin.Context) {
 		return
 	}
 
+	// validate status
+	if !isValidStatus(payload.Status) {
+		util.InternalServerError(c, "status must be success, pending, or failed", nil)
+		return
+	}
+
 	// check if transaction exist
 	transaction, firstErr := tc.TransactionRepo.First(id)
 	if firstErr != nil {
@@ -259,4 +271,14 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 
 	// return response
 	util.Success(c, "transaction deleted successfully", nil)
+}
+
+func isValidStatus(status string) bool {
+	validStatuses := map[string]bool{
+		"success": true,
+		"pending": true,
+		"failed":  true,
+	}
+
+	return validStatuses[status]
 }

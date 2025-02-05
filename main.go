@@ -44,11 +44,11 @@ func main() {
 	dashboardController := dashboardcontroller.NewDashboardController(transactionRepo, userRepo)
 
 	// routes
-	r.POST("/api/transaction", transactionController.CreateTransaction)
+	r.POST("/api/transactions", transactionController.CreateTransaction)
 	r.GET("/api/transactions", transactionController.GetTransactions)
-	r.GET("/api/transaction/:id", transactionController.GetTransactionById)
-	r.PUT("/api/transaction/:id", transactionController.UpdateTransaction)
-	r.DELETE("/api/transaction/:id", transactionController.DeleteTransaction)
+	r.GET("/api/transactions/:id", transactionController.GetTransactionById)
+	r.PUT("/api/transactions/:id", transactionController.UpdateTransaction)
+	r.DELETE("/api/transactions/:id", transactionController.DeleteTransaction)
 
 	r.GET("/api/dashboard/summary", dashboardController.GetDashboardSummary)
 
