@@ -114,7 +114,7 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	// find all transactions
 	transactions, findErr := tc.TransactionRepo.Find(filter)
 	if findErr != nil {
-		util.NotFound(c, "Transaction not found", []dto.TransactionResponse{})
+		util.NotFound(c, "transaction not found", []dto.TransactionResponse{})
 	}
 
 	// build response

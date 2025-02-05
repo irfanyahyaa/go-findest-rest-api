@@ -18,3 +18,11 @@ func (m *MockDatabaseRepository[T]) Create(value *T) (*T, error) {
 	args := m.Called(value)
 	return args.Get(0).(*T), args.Error(1)
 }
+
+func (m *MockDatabaseRepository[T]) Find(filter string) ([]T, error) {
+	args := m.Called(filter)
+	if args.Get(0) != nil {
+		return args.Get(0).([]T), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
