@@ -26,3 +26,17 @@ func (m *MockDatabaseRepository[T]) Find(filter string) ([]T, error) {
 	}
 	return nil, args.Error(1)
 }
+
+func (m *MockDatabaseRepository[T]) Save(value interface{}, conds ...interface{}) (*T, error) {
+	args := m.Called(value)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	args = m.Called(conds)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*T), args.Error(1)
+}

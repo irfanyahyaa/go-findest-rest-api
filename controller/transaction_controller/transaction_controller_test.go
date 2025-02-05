@@ -232,3 +232,79 @@ func TestGetTransactionById(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateTransaction(t *testing.T) {
+	testCases := map[string]struct {
+		testURL        string
+		mockBody       any
+		mockFirstErr   []any
+		mockSaveErr    []any
+		expectedStatus int
+	}{
+		"successfully updated transaction status": {
+			testURL: "/api/transaction/1",
+			mockBody: &dto.TransactionUpdate{
+				Status: "success",
+			},
+			mockFirstErr: []any{&model.Transaction{ID: 1}, nil},
+			mockSaveErr: []any{&model.Transaction{
+				Status: "success",
+			}, nil},
+			expectedStatus: http.StatusOK,
+		},
+		"error cannot bind payload into json": {
+			testURL:        "/api/transaction/1",
+			mockBody:       "wrong-format",
+			expectedStatus: http.StatusInternalServerError,
+		},
+		"error transaction not found": {
+			testURL:        "/api/transaction/1",
+			mockBody:       &dto.TransactionUpdate{},
+			mockFirstErr:   []any{(*model.Transaction)(nil), gorm.ErrRecordNotFound},
+			expectedStatus: http.StatusNotFound,
+		},
+		"error transaction internal server error": {
+			testURL:        "/api/transaction/1",
+			mockBody:       &dto.TransactionUpdate{},
+			mockFirstErr:   []any{(*model.Transaction)(nil), errors.New("")},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		"error cannot updated transaction status into database": {
+			testURL: "/api/transaction/1",
+			mockBody: &dto.TransactionUpdate{
+				Status: "pending",
+			},
+			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
+			mockSaveErr:    []any{(*model.Transaction)(nil), errors.New("")},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			mockTransactionRepo := new(mocks.MockDatabaseRepository[model.Transaction])
+			mockUserRepo := new(mocks.MockDatabaseRepository[model.User])
+
+			controller := transactioncontroller.NewTransactionController(
+				mockTransactionRepo,
+				mockUserRepo,
+			)
+
+			mockTransactionRepo.On("First", mock.Anything, mock.Anything).Return(test.mockFirstErr...).Once()
+			mockTransactionRepo.On("Save", mock.Anything, mock.Anything).Return(test.mockSaveErr...)
+
+			router := setUpRouter()
+			router.PUT("/api/transaction/:id", controller.UpdateTransaction)
+
+			w := httptest.NewRecorder()
+
+			body, _ := json.Marshal(test.mockBody)
+			req, _ := http.NewRequest(http.MethodPut, test.testURL, bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, test.expectedStatus, w.Code)
+		})
+	}
+}
