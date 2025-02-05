@@ -308,3 +308,64 @@ func TestUpdateTransaction(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteTransaction(t *testing.T) {
+	testCases := map[string]struct {
+		testURL        string
+		mockFirstErr   []any
+		mockSaveErr    []any
+		expectedStatus int
+	}{
+		"successfully deleted transaction": {
+			testURL:      "/api/transaction/1",
+			mockFirstErr: []any{&model.Transaction{ID: 1}, nil},
+			mockSaveErr: []any{&model.Transaction{
+				IsDeleted: true,
+			}, nil},
+			expectedStatus: http.StatusOK,
+		},
+		"error transaction not found": {
+			testURL:        "/api/transaction/1",
+			mockFirstErr:   []any{(*model.Transaction)(nil), gorm.ErrRecordNotFound},
+			expectedStatus: http.StatusNotFound,
+		},
+		"error transaction internal server error": {
+			testURL:        "/api/transaction/1",
+			mockFirstErr:   []any{(*model.Transaction)(nil), errors.New("")},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		"error cannot updated transaction status into database": {
+			testURL:        "/api/transaction/1",
+			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
+			mockSaveErr:    []any{(*model.Transaction)(nil), errors.New("")},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			mockTransactionRepo := new(mocks.MockDatabaseRepository[model.Transaction])
+			mockUserRepo := new(mocks.MockDatabaseRepository[model.User])
+
+			controller := transactioncontroller.NewTransactionController(
+				mockTransactionRepo,
+				mockUserRepo,
+			)
+
+			mockTransactionRepo.On("First", mock.Anything, mock.Anything).Return(test.mockFirstErr...).Once()
+			mockTransactionRepo.On("Save", mock.Anything, mock.Anything).Return(test.mockSaveErr...)
+
+			router := setUpRouter()
+			router.DELETE("/api/transaction/:id", controller.DeleteTransaction)
+
+			w := httptest.NewRecorder()
+
+			req, _ := http.NewRequest(http.MethodDelete, test.testURL, nil)
+			req.Header.Set("Content-Type", "application/json")
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, test.expectedStatus, w.Code)
+		})
+	}
+}
