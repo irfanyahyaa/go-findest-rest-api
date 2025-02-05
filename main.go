@@ -46,6 +46,7 @@ func main() {
 	r.GET("/api/transactions", transactionController.GetTransactions)
 	r.GET("/api/transaction/:id", transactionController.GetTransactionById)
 	r.PUT("/api/transaction/:id", transactionController.UpdateTransaction)
+	r.DELETE("/api/transaction/:id", transactionController.DeleteTransaction)
 
 	r.Run()
 }

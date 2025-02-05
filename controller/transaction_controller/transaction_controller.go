@@ -109,7 +109,7 @@ func (tc *TransactionController) GetTransactions(c *gin.Context) {
 	// join conditions with " OR "
 	var filter string
 	if conditions != nil && len(conditions) > 0 {
-		filter = "WHERE " + strings.Join(conditions, " OR ")
+		filter = "AND " + strings.Join(conditions, " OR ")
 	}
 
 	// find all transactions
@@ -220,4 +220,41 @@ func (tc *TransactionController) UpdateTransaction(c *gin.Context) {
 
 	// return response
 	util.Success(c, "transaction status updated successfully", res)
+}
+
+func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
+	// get param from context
+	id := c.Param("id")
+
+	// check if transaction exist
+	transaction, firstErr := tc.TransactionRepo.First(id)
+	if firstErr != nil {
+		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
+			util.NotFound(c, "transaction not found or already deleted", nil)
+			return
+		}
+
+		util.InternalServerError(c, firstErr.Error(), nil)
+		return
+	}
+
+	_, saveErr := tc.TransactionRepo.Save(
+		&model.Transaction{
+			ID:        transaction.ID,
+			UserID:    transaction.UserID,
+			Amount:    transaction.Amount,
+			Status:    transaction.Status,
+			IsDeleted: true,
+			CreatedAt: transaction.CreatedAt,
+			UpdatedAt: transaction.UpdatedAt,
+		},
+		id,
+	)
+	if saveErr != nil {
+		util.InternalServerError(c, saveErr.Error(), nil)
+		return
+	}
+
+	// return response
+	util.Success(c, "transaction deleted successfully", nil)
 }

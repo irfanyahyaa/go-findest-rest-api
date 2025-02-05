@@ -24,7 +24,9 @@ func NewDatabaseRepository[T any](db *gorm.DB) DatabaseRepository[T] {
 
 func (r *DatabaseRepositoryImpl[T]) First(conds ...interface{}) (*T, error) {
 	var entity T
-	if err := r.db.First(&entity, conds...).Error; err != nil {
+	query := r.db.Where("id = ? AND is_deleted = ?", conds, false)
+
+	if err := query.First(&entity).Error; err != nil {
 		return nil, err
 	}
 
@@ -41,7 +43,7 @@ func (r *DatabaseRepositoryImpl[T]) Create(value *T) (*T, error) {
 
 func (r *DatabaseRepositoryImpl[T]) Find(filter string) ([]T, error) {
 	var entity []T
-	query := "SELECT * FROM transactions"
+	query := "SELECT * FROM transactions WHERE is_deleted = false"
 
 	if filter != "" {
 		query = fmt.Sprintf("%s %s", query, filter)
