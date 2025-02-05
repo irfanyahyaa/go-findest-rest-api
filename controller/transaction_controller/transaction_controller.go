@@ -40,7 +40,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	_, firstErr := tc.UserRepo.First(payload.UserID)
 	if firstErr != nil {
 		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
-			util.NotFound(c, "User not found", nil)
+			util.NotFound(c, "user not found", nil)
 			return
 		}
 
@@ -146,7 +146,7 @@ func (tc *TransactionController) GetTransactionById(c *gin.Context) {
 	transaction, firstErr := tc.TransactionRepo.First(id)
 	if firstErr != nil {
 		if errors.Is(firstErr, gorm.ErrRecordNotFound) {
-			util.NotFound(c, "User not found", nil)
+			util.NotFound(c, "transaction not found", nil)
 			return
 		}
 

@@ -172,8 +172,57 @@ func TestGetTransactions(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			query, _ := json.Marshal(test.testURL)
-			req, _ := http.NewRequest(http.MethodGet, test.testURL, bytes.NewBuffer(query))
+			req, _ := http.NewRequest(http.MethodGet, test.testURL, nil)
+			req.Header.Set("Content-Type", "application/json")
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, test.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestGetTransactionById(t *testing.T) {
+	testCases := map[string]struct {
+		testURL        string
+		mockFirstErr   []any
+		expectedStatus int
+	}{
+		"successfully get transaction by id": {
+			testURL:        "/api/transaction/1",
+			mockFirstErr:   []any{&model.Transaction{ID: 1}, nil},
+			expectedStatus: http.StatusOK,
+		},
+		"error transaction not found": {
+			testURL:        "/api/transaction/10",
+			mockFirstErr:   []any{nil, gorm.ErrRecordNotFound},
+			expectedStatus: http.StatusNotFound,
+		},
+		"error internal server error": {
+			testURL:        "/api/transaction/wrong-format",
+			mockFirstErr:   []any{nil, errors.New("")},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			mockTransactionRepo := new(mocks.MockDatabaseRepository[model.Transaction])
+			mockUserRepo := new(mocks.MockDatabaseRepository[model.User])
+
+			controller := transactioncontroller.NewTransactionController(
+				mockTransactionRepo,
+				mockUserRepo,
+			)
+
+			mockTransactionRepo.On("First", mock.Anything, mock.Anything).Return(test.mockFirstErr...).Once()
+
+			router := setUpRouter()
+			router.GET("/api/transaction/:id", controller.GetTransactionById)
+
+			w := httptest.NewRecorder()
+
+			req, _ := http.NewRequest(http.MethodGet, test.testURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 
 			router.ServeHTTP(w, req)
